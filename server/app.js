@@ -4,8 +4,9 @@ const { TwitterApi } = require('twitter-api-v2');
 
 const Team = require('../models/team');
 const Club = require('../models/club');
+const club = require("../models/club");
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3010;
 
 
 const userClient = new TwitterApi({
@@ -41,7 +42,7 @@ const getLineupsTweet = async (club) => {
         'user.fields': 'url',
     })
     //console.log(res.data.data[0].entities);
-    return res;
+    return res.data.data[0];
 }
 
 const app = express();
@@ -81,14 +82,24 @@ app.post("/api/getTeam", (req, res) => {
 });
 
 app.post('/api/addTeam', (req, res, next) => {
-    delete req.body._id;
-    const team = new Team({
+    //delete req.body._id;
+    const team = new Club({
         ...req.body
     });
     team.save()
         .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
         .catch(error => res.status(400).json({ error }));
 });
+
+app.put('/api/updateTeam/:trigram', (req, res, next) => {
+    Club.findOne({ trigram: req.params.trigram })
+        .then(async club => {
+            console.log('club', club?._id)
+            Club.updateOne({ _id: club?._id }, req.body)
+                .then(() => res.status(201).json({ message: club?.name + ' mis à jour !' }))
+                .catch(error => res.status(400).json({ error }));
+        })
+})
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
